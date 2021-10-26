@@ -29,9 +29,9 @@ Sys.setenv(CENSUS_KEY="dbcdeeed2f9e907f31811ee78c1f239a2aa77934")
 
 ```
 
-# Understanding PM2.5 Pollution and Asthma in California
+# Understanding PM2.5 Pollution and Asthma in Santa Clara County
 
-In this assignment, I am using the data available from CalEnviroScreen for evaluating the the relationship between PM2.5 pollution and asthma across the state of California. Data for PM2.5 pollutants, or particles in the air with a diameter of 2.5 microns or less, is measure by mass of pollutant per volume of air or more specifically $\mu g$/$m^3$. This measurement was determined from a weighted average of monitor concentrations and satellite observations from 2015-2017. Asthma data is evaluated through a spatial model for age-adjusted rates of asthma visit to emergency departments per 10,000 visits. This data was collected for 2015-2017 and averaged to determine the final score.
+In this assignment, I am using the data available from CalEnviroScreen for evaluating the the relationship between PM2.5 pollution and asthma for the county of Santa Clara, as the files for all of California were too large. Data for PM2.5 pollutants, or particles in the air with a diameter of 2.5 microns or less, is measure by mass of pollutant per volume of air or more specifically $\mu g$/$m^3$. This measurement was determined from a weighted average of monitor concentrations and satellite observations from 2015-2017. Asthma data is evaluated through a spatial model for age-adjusted rates of asthma visit to emergency departments per 10,000 visits. This data was collected for 2015-2017 and averaged to determine the final score.
 
 source: https://oehha.ca.gov/media/downloads/calenviroscreen/report/calenviroscreen40reportf2021.pdf
 
@@ -53,7 +53,7 @@ ces4_clean %>%
   is.na %>%
   sum()
 
-ca_tracts <- tracts("CA")
+ca_tracts <- tracts("CA", "Santa Clara")
 
 ces4_map <- ces4_clean %>%
   left_join(
@@ -76,7 +76,9 @@ mapview(PM2.5)
 mapview(Asthma)
 ```
 
-Just from an initial map view, it can be noted that areas where PM2.5 pollutants is the most preventable are not always areas that asthma levels are the highest. While both seem to be in higher numbers in more populated areas, like the bay area and L.A., PM2.5 appears to reach its highest levels in the central valley.
+Just from an initial map view for the entirety of California, it can be noted that areas where PM2.5 pollutants is the most preventable are not always areas that asthma levels are the highest. While both seem to be in higher numbers in more populated areas, like the bay area and L.A., PM2.5 appears to reach its highest levels in the central valley.
+
+For consideration of only Santa Clara County, it sits at a pretty universal level of PM2.5 exposure, but asthma cases vary pretty widely across the county. Here we can see a smaller scale of the state trends where the most populous area, San Jose, has the highest asthma rates.
 
 ```{r, include=FALSE}
 
@@ -84,7 +86,7 @@ Just from an initial map view, it can be noted that areas where PM2.5 pollutants
 
 ### Relating PM2.5 Pollution and Asthma
 
-Below is a plot showing PM2.5 and asthma levels for the state of California with each tract represented by a dot. The plot also has a linear line of best fit.
+Below is a plot showing PM2.5 and asthma levels for the entire State of California with each tract represented by a dot. The plot also has a linear line of best fit.
 
 
 ```{r Plot, include=FALSE}
