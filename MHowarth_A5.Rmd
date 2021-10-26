@@ -1,0 +1,136 @@
+---
+title: "R Assignment 5"
+author: "Merrick Howarth"
+date: "Oct. 26, 2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning= FALSE, message = FALSE)
+```
+
+
+
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(plotly)
+library(sf)
+library(tigris)
+library(leaflet)
+library(censusapi)
+library(readxl)
+
+library(mapview)
+
+Sys.setenv(CENSUS_KEY="dbcdeeed2f9e907f31811ee78c1f239a2aa77934")
+
+```
+
+# Understanding PM2.5 Pollution and Asthma in California
+
+In this assignment, I am using the data available from CalEnviroScreen for evaluating the the relationship between PM2.5 pollution and asthma across the state of California. Data for PM2.5 pollutants, or particles in the air with a diameter of 2.5 microns or less, is measure by mass of pollutant per volume of air or more specifically $\mu g$/$m^3$. This measurement was determined from a weighted average of monitor concentrations and satellite observations from 2015-2017. Asthma data is evaluated through a spatial model for age-adjusted rates of asthma visit to emergency departments per 10,000 visits. This data was collected for 2015-2017 and averaged to determine the final score.
+
+source: https://oehha.ca.gov/media/downloads/calenviroscreen/report/calenviroscreen40reportf2021.pdf
+
+```{r PullData, include=FALSE}
+
+ces4 <- read_excel(
+    "calenviroscreen40resultsdatadictionary_F_2021.xlsx", 
+  sheet = "CES4.0FINAL_results"
+)
+
+ces4_clean <- ces4 %>%
+  select(!ends_with("Pctl"))
+
+sum(is.na(ces4_clean$Poverty))
+
+
+ces4_clean %>%
+  pull(Poverty) %>%
+  is.na %>%
+  sum()
+
+ca_tracts <- tracts("CA")
+
+ces4_map <- ces4_clean %>%
+  left_join(
+    ca_tracts %>%
+      transmute(GEOID = as.numeric(GEOID)),
+    by = c("Census Tract" = "GEOID")
+  ) %>%
+  st_as_sf()
+
+PM2.5 <- select(ces4_map, "geometry", "PM2.5")
+Asthma <- select(ces4_map, "geometry", "Asthma")
+
+```
+
+### Visualizing PM2.5 Pollution and Asthma Levels
+Below, two maps of California are shown which demonstrate levels of PM2.5 [$\mu g$/$m^3$] and asthma [asthma ED visits / 10,000 visits] in each respective Census Tract.
+
+```{r Map, echo = FALSE}
+mapview(PM2.5)
+mapview(Asthma)
+```
+
+Just from an initial map view, it can be noted that areas where PM2.5 pollutants is the most preventable are not always areas that asthma levels are the highest. While both seem to be in higher numbers in more populated areas, like the bay area and L.A., PM2.5 appears to reach its highest levels in the central valley.
+
+```{r, include=FALSE}
+
+```
+
+### Relating PM2.5 Pollution and Asthma
+
+Below is a plot showing PM2.5 and asthma levels for the state of California with each tract represented by a dot. The plot also has a linear line of best fit.
+
+
+```{r Plot, include=FALSE}
+
+sctr_plt <- 
+  ggplot(
+    data = ces4_map,
+    aes(
+        x = PM2.5,
+        y = Asthma
+      )
+  ) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    labs(
+      x = "PM2.5 [ug/m^3]",
+      y = "Asthma [asthma ED visits / 10,000]",
+      title = "Levels of PM2.5 Pollutants and Asthma",
+    )
+
+
+
+```
+
+```{r, echo = FALSE}
+sctr_plt
+```
+
+In the plot above we can see there seems to be some level of a positive correlation captured by the linear fit, but it does not seem to be a great fit on visual inspection. The asthma cases do not seem to be heavily related to the PM2.5 pollution level as the greatest number of asthma cases occurs around 9 $\mu g$/$m^3$. This may indicate a different model would fit better, but another area of note is the reduced asthma cases around 11 $\mu g$/$m^3$, which implies to me there may be other more important factors in determining asthma rates. The slight positive trend in the data and linear fit line indicates that while not all variation in asthma cases can be attributed to levels of PM2.5 pollutants, some can be attributed.
+
+
+```{r, include = FALSE}
+model <- lm(Asthma ~ PM2.5, ces4_map)
+
+summary(model)
+```
+
+### Analysis of Linear Model
+
+Through a full analysis of the linear model applied in understanding the correlation of asthma and PM2.5 pollutants the following conclusions can be drawn:
+
+  - An increase of 1 $\mu g$/$m^3$ in PM2.5 pollutants is associated with an increase of 1.72 asthma ED visits in 10,000 visits
+  
+  - 1.5% of the variation in asthma ED visits is explained by the variation in PM2.5 pollutant levels
+  
+This very low variance explanation is expected from the visual inspection. It does leave me very curious as to what can explain the majority of the variation of asthma cases. 
+
+
+
